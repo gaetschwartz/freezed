@@ -19,12 +19,19 @@ export function activate(context: vscode.ExtensionContext) {
 		// The code you place here will be executed every time your command is executed
 
 		// Display a message box to the user
-		const nameOpts: vscode.InputBoxOptions = { prompt: "Choose a name for your class" };
-		const name = await vscode.window.showInputBox(nameOpts);
-		if (name === undefined) {
+		const nameOpts: vscode.InputBoxOptions = {
+			prompt: "Choose a name for your class",
+			validateInput: async (value) => {
+				return /^[a-zA-Z\s_]+$/g.test(value) ? null : "It is not a valid class name !";
+			}
+
+		};
+		const inName = await vscode.window.showInputBox(nameOpts);
+		if (inName === undefined) {
 			vscode.window.showErrorMessage("Aborted");
 			return;
 		}
+		const name = inName.replace(" ", (_, __) => "_");
 		const doJsonOpts: vscode.InputBoxOptions = {
 			prompt: "Do you want " + name + " to be serializable ? (Y/n)",
 			validateInput: async (value) => {
@@ -36,7 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.window.showErrorMessage("Aborted");
 			return;
 		}
-		vscode.window.showInformationMessage('Creating a Freezed class called ' + name + "...");
+		vscode.window.showInformationMessage('Creating ' + camelize(name) + "...");
 		const openOpts: vscode.OpenDialogOptions = { canSelectMany: false, canSelectFiles: false, canSelectFolders: true };
 
 		var uri: vscode.Uri;
@@ -94,9 +101,9 @@ abstract class ${camel} with _$${camel} {
 }
 
 export function camelize(str: String) {
-	return str.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function (match, _index) {
+	return str.replace(/^([a-z])|((?:[\s_])[a-z])/g, function (match, _index) {
 		if (+match === 0) { return ""; } // or if (/\s+/.test(match)) for white spaces
-		return match.toUpperCase();
+		return match.toUpperCase().replace(/[\s_]/g, (_, __) => "");
 	});
 }
 
