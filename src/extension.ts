@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('freezed.generate', async () => {
+	let disposable = vscode.commands.registerCommand('freezed.generate', async (inUri: vscode.Uri) => {
 		// The code you place here will be executed every time your command is executed
 
 		// Display a message box to the user
@@ -26,9 +26,9 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 		const doJsonOpts: vscode.InputBoxOptions = {
-			prompt: "Do you want " + name + " to be serializable ? (y/n)",
+			prompt: "Do you want " + name + " to be serializable ? (Y/n)",
 			validateInput: async (value) => {
-				return value.toLowerCase() === "y" || value.toLowerCase() === "n" ? null : "Enter 'y' or 'n'";
+				return value.toLowerCase() === "y" || value.toLowerCase() === "n" || value.length === 0 ? null : "Enter 'y' or 'n'";
 			}
 		};
 		const doJson = await vscode.window.showInputBox(doJsonOpts);
@@ -36,31 +36,40 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.window.showErrorMessage("Aborted");
 			return;
 		}
-		vscode.window.showInformationMessage('Creating a class called ' + name);
+		vscode.window.showInformationMessage('Creating a Freezed class called ' + name + "...");
 		const openOpts: vscode.OpenDialogOptions = { canSelectMany: false, canSelectFiles: false, canSelectFolders: true };
-		const uri = await vscode.window.showOpenDialog(openOpts);
-		if (uri === undefined) {
-			vscode.window.showErrorMessage("Aborted");
-			return;
+
+		var uri: vscode.Uri;
+
+		if (inUri === undefined) {
+			const userUri = await vscode.window.showOpenDialog(openOpts);
+			if (userUri === undefined) {
+				vscode.window.showErrorMessage("Aborted");
+				return;
+			}
+			uri = userUri[0];
+		} else {
+			uri = inUri;
 		}
-		console.log(uri);
-		var filePath = path.join(uri[0].fsPath, name.toLowerCase() + '.dart');
+
+		var filePath = path.join(uri.fsPath, name.toLowerCase() + '.dart');
 		fs.writeFileSync(filePath, generateFile(name, doJson), 'utf8');
 
 		var openPath = vscode.Uri.parse("file:///" + filePath); //A request file path
 		vscode.workspace.openTextDocument(openPath).then(doc => {
 			vscode.window.showTextDocument(doc);
+			vscode.window.showInformationMessage("Successfully created " + camelize(name) + " Freezed class !");
 		});
-
-
 
 	});
 
 	context.subscriptions.push(disposable);
 }
 
+
+
 function generateFile(name: String, doJson: String) {
-	const json = doJson.toLowerCase() === "y";
+	const json = doJson.toLowerCase() !== "n";
 	const lower = name.toLowerCase();
 	const camel = camelize(name);
 	const jsonImport = json ? `part '${lower}.g.dart';` : "";

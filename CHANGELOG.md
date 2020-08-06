@@ -1,9 +1,11 @@
 # Change Log
 
-All notable changes to the "freezed" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+### 0.1.0
 
-## [Unreleased]
+Added the ability to generate the file from the Explorer View. Right click in a folder on the right and select : `Freezed : Generate a new Freezed class`.
 
-- Initial release
+
+### 0.0.1
+
+Initial release

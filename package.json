@@ -1,8 +1,8 @@
 {
 	"name": "freezed",
-	"displayName": "freezed",
-	"description": "generate freezed classes in Flutter",
-	"version": "0.0.1",
+	"displayName": "Freezed",
+	"description": "Generate Freezed classes in Flutter",
+	"version": "0.1.0",
 	"repository": "https://github.com/Blaxou/freezed",
 	"publisher": "blaxou",
 	"engines": {
@@ -19,9 +19,18 @@
 		"commands": [
 			{
 				"command": "freezed.generate",
-				"title": "Freezed : Generate a file"
+				"title": "Freezed : Generate a new Freezed class"
 			}
-		]
+		],
+		"menus": {
+			"explorer/context": [
+				{
+					"when": "explorerResourceIsFolder",
+					"command": "freezed.generate",
+					"group": "1_modification"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
