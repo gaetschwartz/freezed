@@ -6,7 +6,7 @@
 	"repository": "https://github.com/Blaxou/freezed",
 	"publisher": "blaxou",
 	"engines": {
-		"vscode": "^1.45.0"
+		"vscode": "^1.48.0"
 	},
 	"categories": [
 		"Other"
