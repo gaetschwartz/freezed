@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import path = require('path');
 import fs = require('fs');
+import cp = require('child_process');
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -10,7 +11,39 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "freezed" is now active!');
+
+	let activateBuilder = vscode.commands.registerCommand('freezed.activate_build_runner', async () => {
+		const opts: vscode.ProgressOptions = { location: vscode.ProgressLocation.Notification };
+		await vscode.window.withProgress(opts, async (p, _token) => {
+			p.report({ message: "Initializing ..." });
+			await new Promise(async (r) => {
+				const wp = vscode.workspace.workspaceFolders;
+				const child = cp.spawn((process.platform === "win32" ? "flutter.bat" : "flutter"), ["pub", "run", "build_runner", "build", "--delete-conflicting-outputs"], { cwd: wp === undefined ? undefined : wp[0].uri.fsPath });
+				let mergedErr = "";
+				let lastOut: string;
+
+				child.stdout.on('data', (data) => {
+					console.log('stdout: ' + data.toString());
+					p.report({ message: data.toString() });
+					lastOut = data.toString();
+				});
+
+				child.stderr.on('data', (data) => {
+					console.log('stderr: ' + data.toString());
+					mergedErr += data;
+				});
+
+				child.on('close', (code) => {
+					console.log("close:" + code);
+					r();
+					if (code !== 0) { vscode.window.showErrorMessage("Failed : `" + mergedErr + "`", "Close"); } else { vscode.window.showInformationMessage(lastOut); }
+				});
+
+			});
+
+		});
+
+	});
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -43,7 +76,6 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.window.showErrorMessage("Aborted");
 			return;
 		}
-		vscode.window.showInformationMessage('Creating ' + camelize(name) + "...");
 		const openOpts: vscode.OpenDialogOptions = { canSelectMany: false, canSelectFiles: false, canSelectFolders: true };
 
 		var uri: vscode.Uri;
@@ -65,12 +97,12 @@ export function activate(context: vscode.ExtensionContext) {
 		var openPath = vscode.Uri.parse("file:///" + filePath); //A request file path
 		vscode.workspace.openTextDocument(openPath).then(doc => {
 			vscode.window.showTextDocument(doc);
-			vscode.window.showInformationMessage("Successfully created " + camelize(name) + " Freezed class !");
+			vscode.window.showInformationMessage("Successfully created " + camelize(name) + " Freezed class !", "Okay !");
 		});
 
 	});
 
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(disposable, activateBuilder);
 }
 
 

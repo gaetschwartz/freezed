@@ -1,5 +1,8 @@
 # Change Log
 
+### 0.2.0
+
+Added a new command that allows to run `build_runner`'s `build` command easily, just press `Ctrl+Shift+B`.
 
 ### 0.1.0
 

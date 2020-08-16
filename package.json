@@ -2,7 +2,7 @@
 	"name": "freezed",
 	"displayName": "Freezed",
 	"description": "Generate Freezed classes in Flutter",
-	"version": "0.1.1",
+	"version": "0.2.0",
 	"repository": "https://github.com/Blaxou/freezed",
 	"publisher": "blaxou",
 	"engines": {
@@ -12,7 +12,8 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:freezed.generate"
+		"onCommand:freezed.generate",
+		"onCommand:freezed.activate_build_runner"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -20,6 +21,10 @@
 			{
 				"command": "freezed.generate",
 				"title": "Freezed : Generate a new Freezed class"
+			},
+			{
+				"command": "freezed.activate_build_runner",
+				"title": "Freezed : Build with build_runner"
 			}
 		],
 		"menus": {
@@ -30,7 +35,14 @@
 					"group": "1_modification"
 				}
 			]
-		}
+		},
+		"keybindings": [
+			{
+				"command": "freezed.activate_build_runner",
+				"key": "Ctrl+Shift+B",
+				"mac": "Cmd+Shift+B"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
@@ -41,16 +53,16 @@
 		"test": "node ./out/test/runTest.js"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.45.0",
-		"@types/glob": "^7.1.1",
+		"@types/glob": "^7.1.3",
 		"@types/mocha": "^7.0.2",
-		"@types/node": "^13.11.0",
-		"eslint": "^6.8.0",
-		"@typescript-eslint/parser": "^2.30.0",
+		"@types/node": "^13.13.15",
+		"@types/vscode": "^1.48.0",
 		"@typescript-eslint/eslint-plugin": "^2.30.0",
+		"@typescript-eslint/parser": "^2.30.0",
+		"eslint": "^6.8.0",
 		"glob": "^7.1.6",
 		"mocha": "^7.1.2",
-		"typescript": "^3.8.3",
+		"typescript": "^3.9.7",
 		"vscode-test": "^1.3.0"
 	}
 }
