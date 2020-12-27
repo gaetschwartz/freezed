@@ -2,7 +2,7 @@
 	"name": "freezed",
 	"displayName": "Freezed",
 	"description": "Generate Freezed classes in Flutter",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"repository": "https://github.com/Blaxou/freezed",
 	"publisher": "blaxou",
 	"engines": {

@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const opts: vscode.ProgressOptions = { location: vscode.ProgressLocation.Notification };
 		await vscode.window.withProgress(opts, async (p, _token) => {
 			p.report({ message: "Initializing ..." });
-			await new Promise(async (r) => {
+			await new Promise<void>(async (r) => {
 				const wp = vscode.workspace.workspaceFolders;
 				const child = cp.spawn((process.platform === "win32" ? "flutter.bat" : "flutter"), ["pub", "run", "build_runner", "build", "--delete-conflicting-outputs"], { cwd: wp === undefined ? undefined : wp[0].uri.fsPath });
 				let mergedErr = "";
@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 				child.on('close', (code) => {
 					console.log("close:" + code);
-					r();
+					r(undefined);
 					if (code !== 0) { vscode.window.showErrorMessage("Failed : `" + mergedErr + "`", "Close"); } else { vscode.window.showInformationMessage(lastOut); }
 				});
 
@@ -44,6 +44,8 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 
 	});
+
+	interface BooleanQuickPickItem extends vscode.QuickPickItem { value: boolean }
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -65,14 +67,21 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 		const name = inName.replace(" ", (_, __) => "_");
-		const doJsonOpts: vscode.InputBoxOptions = {
-			prompt: "Do you want " + name + " to be serializable ? (Y/n)",
-			validateInput: async (value) => {
-				return value.toLowerCase() === "y" || value.toLowerCase() === "n" || value.length === 0 ? null : "Enter 'y' or 'n'";
-			}
-		};
-		const doJson = await vscode.window.showInputBox(doJsonOpts);
-		if (doJson === undefined) {
+
+
+
+
+		const doJson: readonly BooleanQuickPickItem[] = await new Promise((res) => {
+			const quickpick = vscode.window.createQuickPick<BooleanQuickPickItem>();
+			const items = [{ label: "Yes", value: true }, { label: "No", value: false }];
+			quickpick.title = "Add toJSON/fromJSON methods ?";
+			quickpick.items = items;
+			quickpick.onDidAccept(() => quickpick.hide());
+			quickpick.onDidHide(() => { res(quickpick.selectedItems); quickpick.dispose(); });
+			quickpick.show();
+		});
+
+		if (doJson === undefined || doJson.length === 0) {
 			vscode.window.showErrorMessage("Aborted");
 			return;
 		}
@@ -92,7 +101,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		var filePath = path.join(uri.fsPath, name.toLowerCase() + '.dart');
-		fs.writeFileSync(filePath, generateFile(name, doJson), 'utf8');
+		fs.writeFileSync(filePath, generateFile(name, doJson[0].value), 'utf8');
 
 		var openPath = vscode.Uri.parse("file:///" + filePath); //A request file path
 		vscode.workspace.openTextDocument(openPath).then(doc => {
@@ -107,12 +116,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 
-function generateFile(name: String, doJson: String) {
-	const json = doJson.toLowerCase() !== "n";
+function generateFile(name: String, doJson: boolean) {
 	const lower = name.toLowerCase();
 	const camel = camelize(name);
-	const jsonImport = json ? `part '${lower}.g.dart';` : "";
-	const jsonConstr = json ? `
+	const jsonImport = doJson ? `part '${lower}.g.dart';` : "";
+	const jsonConstr = doJson ? `
   factory ${camel}.fromJson(Map<String, dynamic> json) =>
 			_$${camel}FromJson(json);` : "";
 
