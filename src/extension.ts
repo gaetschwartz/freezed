@@ -5,6 +5,8 @@ import path = require('path');
 import fs = require('fs');
 import cp = require('child_process');
 
+let myStatusBarItem: vscode.StatusBarItem;
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -12,8 +14,62 @@ export function activate(context: vscode.ExtensionContext) {
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 
+	// create a new status bar item that we can now manage
+	myStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
+	const watchString = "$(eye) Watch";
+	const loadingString = "$(loading~spin) Initializing";
+	const watchingString = "$(eye-closed) Remove watch";
+	myStatusBarItem.command = "freezed.watch_build_runner";
+	myStatusBarItem.text = watchString;
+	myStatusBarItem.tooltip = "Watch with build_runner";
+	myStatusBarItem.show();
+	context.subscriptions.push(myStatusBarItem);
+
+	let watch: cp.ChildProcessWithoutNullStreams | undefined;
+	const output = vscode.window.createOutputChannel("Build Runner");
+
+	let watch_build_runner = vscode.commands.registerCommand("freezed.watch_build_runner", async () => {
+		await new Promise<void>(async () => {
+			if (watch !== undefined) {
+				myStatusBarItem.text = watchString;
+				output.appendLine("Stopped watching");
+				watch.kill("SIGINT");
+				watch = undefined;
+				return;
+			}
+			output.clear();
+			const wp = vscode.workspace.workspaceFolders;
+			const cwd = wp === undefined ? undefined : wp[0].uri.fsPath;
+			console.log(cwd);
+			watch = cp.spawn((process.platform === "win32" ? "flutter.bat" : "flutter"), ["pub", "run", "build_runner", "watch", "--delete-conflicting-outputs"], { cwd: cwd });
+			myStatusBarItem.text = loadingString;
+
+			watch.stdout.on('data', (data) => {
+				console.log('stdout: ' + data.toString());
+				myStatusBarItem.text = watchingString;
+				output.append(data.toString());
+			});
+
+			watch.stderr.on('data', (data) => {
+				console.log('stderr: ' + data.toString());
+				output.append(data.toString());
+			});
+
+			watch.on('close', (code) => {
+				console.log("close:" + code);
+				output.appendLine("Watch exited with code " + code);
+				if (code !== 0) { output.show(); }
+				return;
+			});
+
+		});
+		myStatusBarItem.text = watchString;
+		watch = undefined;
+	});
+
 	let activateBuilder = vscode.commands.registerCommand('freezed.activate_build_runner', async () => {
 		const opts: vscode.ProgressOptions = { location: vscode.ProgressLocation.Notification };
+
 		await vscode.window.withProgress(opts, async (p, _token) => {
 			p.report({ message: "Initializing ..." });
 			await new Promise<void>(async (r) => {
@@ -52,7 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
 	let disposable = vscode.commands.registerCommand('freezed.generate', () => generateClass(undefined));
 	let generateFromContextDisposable = vscode.commands.registerCommand('freezed.generate_from_context', (inUri: vscode.Uri) => generateClass(inUri));
 
-	context.subscriptions.push(generateFromContextDisposable, disposable, activateBuilder);
+	context.subscriptions.push(watch_build_runner, generateFromContextDisposable, disposable, activateBuilder);
 }
 
 interface BooleanQuickPickItem extends vscode.QuickPickItem { value: boolean }
@@ -67,15 +123,11 @@ async function generateClass(inUri: vscode.Uri | undefined) {
 		}
 
 	};
-	const inName = await vscode.window.showInputBox(nameOpts);
-	if (inName === undefined) {
+	const name = await vscode.window.showInputBox(nameOpts);
+	if (name === undefined) {
 		vscode.window.showErrorMessage("Aborted");
 		return;
 	}
-	const name = inName.replace(" ", (_, __) => "_");
-
-
-
 
 	const doJson: readonly BooleanQuickPickItem[] = await new Promise((res) => {
 		const quickpick = vscode.window.createQuickPick<BooleanQuickPickItem>();

@@ -1,9 +1,9 @@
 {
 	"name": "freezed",
-	"displayName": "Freezed",
-	"description": "Generate Freezed classes in Flutter",
-	"version": "0.3.1",
-	"repository": "https://github.com/Blaxou/freezed",
+	"displayName": "Freezed | Build Runner",
+	"description": "Generate Freezed classes and run build_runner commands easily.",
+	"version": "0.4.0",
+	"repository": "https://github.com/gaetschwartz/freezed",
 	"publisher": "blaxou",
 	"engines": {
 		"vscode": "^1.48.0"
@@ -12,9 +12,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:freezed.generate",
-		"onCommand:freezed.activate_build_runner",
-		"onCommand:freezed.generate_from_context"
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
