@@ -2,7 +2,7 @@
 	"name": "freezed",
 	"displayName": "Freezed",
 	"description": "Generate Freezed classes in Flutter",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"repository": "https://github.com/Blaxou/freezed",
 	"publisher": "blaxou",
 	"engines": {
@@ -13,26 +13,37 @@
 	],
 	"activationEvents": [
 		"onCommand:freezed.generate",
-		"onCommand:freezed.activate_build_runner"
+		"onCommand:freezed.activate_build_runner",
+		"onCommand:freezed.generate_from_context"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
 				"command": "freezed.generate",
-				"title": "Freezed : Generate a new Freezed class"
+				"title": "Freezed: Generate a new Freezed class"
 			},
 			{
 				"command": "freezed.activate_build_runner",
-				"title": "Freezed : Build with build_runner"
+				"title": "Freezed: Build with build_runner"
+			},
+			{
+				"command": "freezed.generate_from_context",
+				"title": "📝 Generate a new Freezed class"
 			}
 		],
 		"menus": {
+			"commandPalette": [
+				{
+					"command": "freezed.generate_from_context",
+					"when": "false"
+				}
+			],
 			"explorer/context": [
 				{
 					"when": "explorerResourceIsFolder",
-					"command": "freezed.generate",
-					"group": "1_modification"
+					"command": "freezed.generate_from_context",
+					"group": "z_commands"
 				}
 			]
 		},

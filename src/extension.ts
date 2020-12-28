@@ -45,73 +45,75 @@ export function activate(context: vscode.ExtensionContext) {
 
 	});
 
-	interface BooleanQuickPickItem extends vscode.QuickPickItem { value: boolean }
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('freezed.generate', async (inUri: vscode.Uri) => {
-		// The code you place here will be executed every time your command is executed
+	let disposable = vscode.commands.registerCommand('freezed.generate', () => generateClass(undefined));
+	let generateFromContextDisposable = vscode.commands.registerCommand('freezed.generate_from_context', (inUri: vscode.Uri) => generateClass(inUri));
 
-		// Display a message box to the user
-		const nameOpts: vscode.InputBoxOptions = {
-			prompt: "Choose a name for your class",
-			validateInput: async (value) => {
-				return /^[a-zA-Z\s_]+$/g.test(value) ? null : "It is not a valid class name !";
-			}
+	context.subscriptions.push(generateFromContextDisposable, disposable, activateBuilder);
+}
 
-		};
-		const inName = await vscode.window.showInputBox(nameOpts);
-		if (inName === undefined) {
-			vscode.window.showErrorMessage("Aborted");
-			return;
-		}
-		const name = inName.replace(" ", (_, __) => "_");
+interface BooleanQuickPickItem extends vscode.QuickPickItem { value: boolean }
+async function generateClass(inUri: vscode.Uri | undefined) {
+	// The code you place here will be executed every time your command is executed
 
-
-
-
-		const doJson: readonly BooleanQuickPickItem[] = await new Promise((res) => {
-			const quickpick = vscode.window.createQuickPick<BooleanQuickPickItem>();
-			const items = [{ label: "Yes", value: true }, { label: "No", value: false }];
-			quickpick.title = "Add toJSON/fromJSON methods ?";
-			quickpick.items = items;
-			quickpick.onDidAccept(() => quickpick.hide());
-			quickpick.onDidHide(() => { res(quickpick.selectedItems); quickpick.dispose(); });
-			quickpick.show();
-		});
-
-		if (doJson === undefined || doJson.length === 0) {
-			vscode.window.showErrorMessage("Aborted");
-			return;
-		}
-		const openOpts: vscode.OpenDialogOptions = { canSelectMany: false, canSelectFiles: false, canSelectFolders: true };
-
-		var uri: vscode.Uri;
-
-		if (inUri === undefined) {
-			const userUri = await vscode.window.showOpenDialog(openOpts);
-			if (userUri === undefined) {
-				vscode.window.showErrorMessage("Aborted");
-				return;
-			}
-			uri = userUri[0];
-		} else {
-			uri = inUri;
+	// Display a message box to the user
+	const nameOpts: vscode.InputBoxOptions = {
+		prompt: "Choose a name for your class",
+		validateInput: async (value) => {
+			return /^[0-9a-zA-Z_]+$/g.test(value) ? null : "It is not a valid class name !";
 		}
 
-		var filePath = path.join(uri.fsPath, name.toLowerCase() + '.dart');
-		fs.writeFileSync(filePath, generateFile(name, doJson[0].value), 'utf8');
+	};
+	const inName = await vscode.window.showInputBox(nameOpts);
+	if (inName === undefined) {
+		vscode.window.showErrorMessage("Aborted");
+		return;
+	}
+	const name = inName.replace(" ", (_, __) => "_");
 
-		var openPath = vscode.Uri.parse("file:///" + filePath); //A request file path
-		vscode.workspace.openTextDocument(openPath).then(doc => {
-			vscode.window.showTextDocument(doc);
-			vscode.window.showInformationMessage("Successfully created " + camelize(name) + " Freezed class !", "Okay !");
-		});
 
+
+
+	const doJson: readonly BooleanQuickPickItem[] = await new Promise((res) => {
+		const quickpick = vscode.window.createQuickPick<BooleanQuickPickItem>();
+		const items = [{ label: "Yes", value: true }, { label: "No", value: false }];
+		quickpick.title = "Add toJSON/fromJSON methods ?";
+		quickpick.items = items;
+		quickpick.onDidAccept(() => quickpick.hide());
+		quickpick.onDidHide(() => { res(quickpick.selectedItems); quickpick.dispose(); });
+		quickpick.show();
 	});
 
-	context.subscriptions.push(disposable, activateBuilder);
+	if (doJson === undefined || doJson.length === 0) {
+		vscode.window.showErrorMessage("Aborted");
+		return;
+	}
+	const openOpts: vscode.OpenDialogOptions = { canSelectMany: false, canSelectFiles: false, canSelectFolders: true };
+
+	var uri: vscode.Uri;
+
+	if (inUri === undefined) {
+		const userUri = await vscode.window.showOpenDialog(openOpts);
+		if (userUri === undefined) {
+			vscode.window.showErrorMessage("Aborted");
+			return;
+		}
+		uri = userUri[0];
+	} else {
+		uri = inUri;
+	}
+
+	var filePath = path.join(uri.fsPath, name.toLowerCase() + '.dart');
+	fs.writeFileSync(filePath, generateFile(name, doJson[0].value), 'utf8');
+
+	var openPath = vscode.Uri.parse("file:///" + filePath); //A request file path
+	vscode.workspace.openTextDocument(openPath).then(doc => {
+		vscode.window.showTextDocument(doc);
+		vscode.window.showInformationMessage("Successfully created " + camelize(name) + " Freezed class !", "Okay !");
+	});
 }
 
 
