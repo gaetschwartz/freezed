@@ -2,7 +2,7 @@
 	"name": "freezed",
 	"displayName": "Freezed | Build Runner",
 	"description": "Generate Freezed classes and run build_runner commands easily.",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"repository": "https://github.com/gaetschwartz/freezed",
 	"publisher": "blaxou",
 	"engines": {
@@ -13,6 +13,12 @@
 	],
 	"activationEvents": [
 		"*"
+	],
+	"keywords": [
+		"freezed",
+		"flutter",
+		"build_runner",
+		"build"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -30,6 +36,30 @@
 				"title": "📝 Generate a new Freezed class"
 			}
 		],
+		"configuration": {
+			"title": "Freezed | Build Runner",
+			"properties": {
+				"freezed.commandToUse": {
+					"type": "string",
+					"default": "flutter",
+					"enum": [
+						"flutter",
+						"dart"
+					],
+					"description": "Whether to use Flutter or Dart to run build_runner"
+				},
+				"freezed.useDeleteConflictingOutputs.build": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "Use `--delete-conflicting-outputs` for the `build_runner build` command."
+				},
+				"freezed.useDeleteConflictingOutputs.watch": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "Use `--delete-conflicting-outputs` for the `build_runner watch` command."
+				}
+			}
+		},
 		"menus": {
 			"commandPalette": [
 				{

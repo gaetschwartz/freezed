@@ -26,9 +26,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(myStatusBarItem);
 
 	let watch: cp.ChildProcessWithoutNullStreams | undefined;
-	const output = vscode.window.createOutputChannel("Build Runner");
+	const output = vscode.window.createOutputChannel("Freezed | Build Runner");
 
 	let watch_build_runner = vscode.commands.registerCommand("freezed.watch_build_runner", async () => {
+		const config = vscode.workspace.getConfiguration('freezed');
 		await new Promise<void>(async () => {
 			if (watch !== undefined) {
 				myStatusBarItem.text = watchString;
@@ -41,7 +42,19 @@ export function activate(context: vscode.ExtensionContext) {
 			const wp = vscode.workspace.workspaceFolders;
 			const cwd = wp === undefined ? undefined : wp[0].uri.fsPath;
 			console.log(cwd);
-			watch = cp.spawn((process.platform === "win32" ? "flutter.bat" : "flutter"), ["pub", "run", "build_runner", "watch", "--delete-conflicting-outputs"], { cwd: cwd });
+			const cmd = config.get<string>("commandToUse") ?? "flutter";
+			let args: string[] = [];
+			if (cmd === "flutter") { args.push("pub"); }
+			args = args.concat(["run", "build_runner", "watch"]);
+			if (config.get("useDeleteConflictingOutputs.watch") === true) { args.push("--delete-conflicting-outputs"); }
+
+			console.log(cmd + " " + args.join(" "));
+
+			watch = cp.spawn(
+				process.platform === "win32" ? cmd + ".bat" : cmd.toString(),
+				args,
+				{ cwd: cwd }
+			);
 			myStatusBarItem.text = loadingString;
 
 			watch.stdout.on('data', (data) => {
@@ -68,13 +81,25 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	let activateBuilder = vscode.commands.registerCommand('freezed.activate_build_runner', async () => {
+		const config = vscode.workspace.getConfiguration('freezed');
 		const opts: vscode.ProgressOptions = { location: vscode.ProgressLocation.Notification };
 
 		await vscode.window.withProgress(opts, async (p, _token) => {
 			p.report({ message: "Initializing ..." });
 			await new Promise<void>(async (r) => {
 				const wp = vscode.workspace.workspaceFolders;
-				const child = cp.spawn((process.platform === "win32" ? "flutter.bat" : "flutter"), ["pub", "run", "build_runner", "build", "--delete-conflicting-outputs"], { cwd: wp === undefined ? undefined : wp[0].uri.fsPath });
+				const cmd = config.get<string>("commandToUse") ?? "flutter";
+				let args: string[] = [];
+				if (cmd === "flutter") { args.push("pub"); }
+				args = args.concat(["run", "build_runner", "build"]);
+				if (config.get("useDeleteConflictingOutputs.build") === true) { args.push("--delete-conflicting-outputs"); }
+
+				console.log(cmd + " " + args.join(" "));
+
+				const child = cp.spawn(
+					process.platform === "win32" ? cmd + ".bat" : cmd.toString(),
+					args,
+					{ cwd: wp === undefined ? undefined : wp[0].uri.fsPath });
 				let mergedErr = "";
 				let lastOut: string;
 

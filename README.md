@@ -1,14 +1,16 @@
-# Freezed README
+# Freezed | Build Runner
 
-Extension that allows to create [Freezed](https://pub.dev/packages/freezed) templates easily.
+## Features
 
-## Known Issues
+* Generate [freezed](https://pub.dev/packages/freezed) classes easily.
 
-None.
+* Run [build_runner](https://pub.dev/packages/build_runner) commands conveniently.
 
-## Release Notes
+## Screenshots
 
-*Check CHANGELOG.MD*
+![vscode-ayu](assets/screen1.png)
+![vscode-ayu](assets/screen2.png)
+
 
 
 
