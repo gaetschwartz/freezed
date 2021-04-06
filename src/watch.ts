@@ -1,8 +1,12 @@
 import * as vscode from 'vscode';
 import { computeCommandName, getDartProjectPath, isWin32 } from './extension';
+import { SigintSender } from './sigint';
 import cp = require('child_process');
 
 enum State { initializing, watching, idle, }
+
+const timeout = <T>(prom: Promise<T>, time: number) =>
+  Promise.race<T>([prom, new Promise<T>((_r, rej) => setTimeout(rej, time))]);
 
 interface ExitData extends Object {
   code?: number | null;
@@ -11,17 +15,23 @@ interface ExitData extends Object {
 
 const exitDataToString = (d: ExitData) => `{code: ${d.code}, signal: ${d.signal}}`;
 
-const timeout = <T>(prom: Promise<T>, time: number) =>
-  Promise.race<T>([prom, new Promise<T>((_r, rej) => setTimeout(rej, time))]);
-
 export class BuildRunnerWatch {
 
-  constructor() {
+  readonly sigintSender: SigintSender;
+
+  constructor(context: vscode.ExtensionContext) {
     this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
     this.statusBar.command = "freezed.build_runner_watch";
     this.statusBar.tooltip = "Watch with build_runner";
     this.statusBar.text = this.text();
+    context.subscriptions.push(this.statusBar);
+
     this.output = vscode.window.createOutputChannel("freezed & build_runner");
+
+    this.sigintSender = new SigintSender(
+      context,
+      "https://github.com/gaetschwartz/SigintSender/releases/download/ci-deploy-8/SigintSender-x64-8.exe"
+    );
   }
 
   state: State = State.idle;
@@ -34,7 +44,6 @@ export class BuildRunnerWatch {
   readonly statusBar: vscode.StatusBarItem;
 
   show(): void {
-    console.log('Show status bar');
     this.statusBar.show();
   }
 
@@ -70,24 +79,24 @@ export class BuildRunnerWatch {
   async removeWatch(): Promise<void> {
     if (process !== undefined) {
 
-      let exit: ExitData;
-
       try {
-        exit = await timeout(new Promise<ExitData>(async (r) => {
-          this.process?.on('exit', (code, sgn) => r({ signal: sgn, code: code }));
-          this.killWatch();
-        }), 5000);
+        const exit = await timeout<ExitData>(new Promise(async (cb) => {
+          this.process?.on('exit', (code, sgn) => cb({ signal: sgn, code: code }));
+          // Try to submit 'y' to answer the dialog 'Terminate batch job (Y/N)? '.
+          this.process?.stdin.write('y\n');
+          await this.killWatch();
+        }), 2500);
+
+        console.log(`Exited successfully with: ${exitDataToString(exit)}`);
+
+        if (exit.code === 0) {
+          console.log('Success, cleaning...');
+          this.process = undefined;
+          this.output.appendLine("Stopped watching");
+          this.setState(State.idle);
+        }
       } catch (error) {
-        console.error('Error while trying to kill and timeout for 5s: ' + error);
-        exit = {};
-      }
-
-      console.log(`exited successfully with: ${exitDataToString(exit)}`);
-
-      if (this.process?.killed) {
-        this.process = undefined;
-        this.output.appendLine("Stopped watching");
-        this.setState(State.idle);
+        vscode.window.showErrorMessage("Failed to remove the watch! Try again. If it still doesn't work try closing VSCode and reopening.", "Okay");
       }
     }
   }
@@ -95,19 +104,33 @@ export class BuildRunnerWatch {
   getChildPID(): string | undefined {
     if (this.process !== undefined) {
       const ppid = this.process!.pid;
-      const res = cp.execSync(`ps xao pid,ppid | grep "\d* ${ppid}"`, { encoding: "utf8" });
-      return res.split(' ')[0];
+      if (isWin32) {
+        const res = cp.execSync(`wmic process where("ParentProcessId=${ppid}") get Caption,ProcessId`, {
+          encoding: "utf8", shell: "powershell.exe",
+        });
+        //console.log(res);
+        const match = res.match(/dart.exe\s+(\d+)/);
+        console.log(match);
+        if (match === null) {
+          console.log('No matches');
+          return undefined;
+        }
+        return match[1];
+      } else {
+        const res = cp.execSync(`ps xao pid,ppid | grep "\d* ${ppid}"`, { encoding: "utf8" });
+        return res.split(' ')[0];
+      }
     }
   }
 
-  killWatch(): void {
+  async killWatch(): Promise<void> {
     if (this.process !== undefined) {
       console.log('Going to try to kill the watch...');
       console.log('PID of parent is ' + this.process.pid);
-      const pid = this.getChildPID();
+      const pid = this.getChildPID()!;
       console.log('PID of actual process is ' + pid);
-      if (isWin32()) {
-        cp.spawnSync("taskkill", ["/pid", `${pid}`, '/f', '/t']);
+      if (isWin32) {
+        await this.sigintSender.send(pid);
       } else {
         cp.spawnSync("kill", ["-SIGINT", `${pid}`]);
       }
@@ -124,36 +147,39 @@ export class BuildRunnerWatch {
   }
 
   async watch(): Promise<void> {
-    const config = vscode.workspace.getConfiguration('freezed');
+    this.output.clear();
 
+    if (isWin32) {
+      const risk = "I take the risk.";
+      const res = await vscode.window.showWarningMessage("Using `dart run build_runner watch` on Windows is broken for the moment. Starting it works fine but you won't be able quit the watch easily.", risk);
+      if (res !== risk) { return; }
+    }
+
+    const config = vscode.workspace.getConfiguration('freezed');
     let cwd = getDartProjectPath();
 
     if (cwd === undefined) {
       const uri = await this.queryProject();
-      if (uri === undefined) { return; } else { cwd = uri.path; }
+      if (uri === undefined) { return; } else { cwd = uri.fsPath; }
     }
 
-    console.log(cwd);
+    console.log("Cwd: " + cwd);
 
     const cmd = 'dart';
     let args: string[] = ["run", "build_runner", "watch"];
+    const opts: cp.SpawnOptionsWithoutStdio = { cwd: cwd };
     if (config.get("useDeleteConflictingOutputs.watch") === true) { args.push("--delete-conflicting-outputs"); }
 
-    console.log(cmd + " " + args.join(" "));
+    console.log(computeCommandName(cmd), args);
 
-    this.output.clear();
-    this.process = cp.spawn(
-      computeCommandName(cmd),
-      args,
-      { cwd: cwd }
-    );
+    this.process = cp.spawn(computeCommandName(cmd), args, opts);
     this.setState(State.initializing);
 
     console.log(`Started with PID: ${this.process!.pid}`);
 
     this.process.stdout.on('data', (data) => {
       const string = data.toString();
-      //console.log('stdout: ' + string);
+      console.log('stdout: ' + string);
       if (this.state !== State.watching) { this.setState(State.watching); }
       this.output.append(string);
     });
@@ -164,11 +190,19 @@ export class BuildRunnerWatch {
       this.output.append(err);
     });
 
+    this.process.stdin.on('data', (data) => {
+      const stdin = data.toString();
+      console.log('stdin: ' + stdin);
+    });
+
+    this.process.on('error', (err) => { console.error(err); });
+    this.process.on('message', (err) => { console.info('info:', err); });
+
     this.process.on('close', (code) => {
       console.log("close: " + code);
 
       if (code !== 0) {
-        this.output.appendLine("dart run build_runner watch exited with code " + code);
+        this.output.appendLine("\nCommand exited with code " + code);
         this.output.show();
       }
 

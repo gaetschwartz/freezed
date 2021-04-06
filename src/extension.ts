@@ -1,15 +1,13 @@
 import * as vscode from 'vscode';
 import { BuildRunnerWatch } from './watch';
-import path = require('path');
+import p = require('path');
 import fs = require('fs');
 import cp = require('child_process');
 
-const watch = new BuildRunnerWatch();
-
 export function activate(context: vscode.ExtensionContext) {
 
+	const watch = new BuildRunnerWatch(context);
 	watch.show();
-	context.subscriptions.push(watch.statusBar);
 
 	let watch_build_runner = vscode.commands.registerCommand("freezed.build_runner_watch", async () => await watch.toggle());
 
@@ -150,6 +148,8 @@ export function getDartProjectPath(): string | undefined {
 	const uri = document?.uri;
 	const path = uri?.path;
 
+	console.log('document_path=' + path);
+
 	/// Guard against welcome screen
 	const isWelcomeScreen = path === undefined;
 	if (isWelcomeScreen) { return undefined; }
@@ -181,8 +181,7 @@ export function getDartProjectPath(): string | undefined {
 	const hasTopLevelFolder = segments.length > 1;
 	if (!hasTopLevelFolder) { return undefined; }
 
-
-	const pubspecSuffix = '/pubspec.yaml';
+	const pubspecSuffix = 'pubspec.yaml';
 
 	if (fs.existsSync(workspacePath! + pubspecSuffix)) { return workspacePath; }
 
@@ -190,8 +189,8 @@ export function getDartProjectPath(): string | undefined {
 	for (let i = 0; i < segments.length; i++) {
 		const s = segments[i];
 		walkSegments.push(s);
-		const projectPath = workspacePath + '/' + walkSegments.join('/');
-		const pubspec = projectPath + pubspecSuffix;
+		const projectPath = vscode.Uri.file(p.join(workspacePath, ...walkSegments)).fsPath;
+		const pubspec = p.join(projectPath, pubspecSuffix);
 		console.log('Looking for ' + pubspec);
 		if (fs.existsSync(pubspec)) { console.log('Found it!'); return projectPath; }
 	}
@@ -199,8 +198,8 @@ export function getDartProjectPath(): string | undefined {
 }
 
 
-export let isWin32 = () => process.platform === "win32";
-export let computeCommandName = (cmd: string): string => isWin32() ? cmd + ".bat" : cmd;
+export let isWin32 = process.platform === "win32";
+export let computeCommandName = (cmd: string): string => isWin32 ? cmd + ".bat" : cmd;
 
 async function generateClass(inUri: vscode.Uri | undefined) {
 	// The code you place here will be executed every time your command is executed
@@ -248,7 +247,7 @@ async function generateClass(inUri: vscode.Uri | undefined) {
 		uri = inUri;
 	}
 
-	var filePath = path.join(uri.fsPath, name.toLowerCase() + '.dart');
+	var filePath = p.join(uri.fsPath, name.toLowerCase() + '.dart');
 	fs.writeFileSync(filePath, generateFile(name, doJson[0].value), 'utf8');
 
 	var openPath = vscode.Uri.parse("file:///" + filePath); //A request file path
