@@ -28,7 +28,7 @@
 				"title": "Freezed: Generate a new Freezed class"
 			},
 			{
-				"command": "freezed.activate_build_runner",
+				"command": "freezed.build_runner_build",
 				"title": "Freezed: Build with build_runner"
 			},
 			{
@@ -39,15 +39,6 @@
 		"configuration": {
 			"title": "Freezed | Build Runner",
 			"properties": {
-				"freezed.commandToUse": {
-					"type": "string",
-					"default": "flutter",
-					"enum": [
-						"flutter",
-						"dart"
-					],
-					"description": "Whether to use Flutter or Dart to run build_runner"
-				},
 				"freezed.useDeleteConflictingOutputs.build": {
 					"type": "boolean",
 					"default": false,
@@ -77,9 +68,14 @@
 		},
 		"keybindings": [
 			{
-				"command": "freezed.activate_build_runner",
+				"command": "freezed.build_runner_build",
 				"key": "Ctrl+Shift+B",
 				"mac": "Cmd+Shift+B"
+			},
+			{
+				"command": "freezed.build_runner_build_filters",
+				"key": "Ctrl+Alt+B",
+				"mac": "Cmd+Alt+B"
 			}
 		]
 	},
