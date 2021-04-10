@@ -1,15 +1,16 @@
-# Freezed | Build Runner
+# Freezed
 
-## Features
+## 🌟 Features
 
-* Generate [freezed](https://pub.dev/packages/freezed) classes easily.
+### 🔨 Generate [freezed](https://pub.dev/packages/freezed) classes easily.
 
-* Run [build_runner](https://pub.dev/packages/build_runner) commands conveniently.
+### **Note**: `build_runner` support moved to a separate extension, get it [here](https://marketplace.visualstudio.com/items?itemName=blaxou.build-runner).
+
 
 ## Screenshots
 
-![vscode-ayu](assets/screen1.png)
-![vscode-ayu](assets/screen2.png)
+![](assets/screen1.png)
+![](assets/screen2.png)
 
 
 

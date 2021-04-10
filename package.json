@@ -3,7 +3,10 @@
 	"displayName": "Freezed | Build Runner",
 	"description": "Generate Freezed classes and run build_runner commands easily.",
 	"version": "0.5.0",
-	"repository": "https://github.com/gaetschwartz/freezed",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/gaetschwartz/freezed.git"
+	},
 	"publisher": "blaxou",
 	"engines": {
 		"vscode": "^1.48.0"
@@ -68,14 +71,9 @@
 		},
 		"keybindings": [
 			{
-				"command": "freezed.build_runner_build",
+				"command": "freezed.build_runner",
 				"key": "Ctrl+Shift+B",
 				"mac": "Cmd+Shift+B"
-			},
-			{
-				"command": "freezed.build_runner_build_filters",
-				"key": "Ctrl+Alt+B",
-				"mac": "Cmd+Alt+B"
 			}
 		]
 	},
