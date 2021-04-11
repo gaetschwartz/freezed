@@ -8,7 +8,7 @@ export function activate(context: vscode.ExtensionContext) {
 	let generateFromContextDisposable = vscode.commands.registerCommand('freezed.generate_from_context', (inUri: vscode.Uri) => generateClass(inUri));
 	let deprecated = vscode.commands.registerCommand("freezed.build_runner", async () => {
 		const getIt = "Install it";
-		const id = "blaxou.build-runner";
+		const id = "gaetschwartz.build-runner";
 		const res = await vscode.window.showWarningMessage("Build_runner support has moved to its own extension! You can get it by searching for 'blaxou.build-runner' in extensions.", getIt);
 		if (res === getIt) {
 			const res = cp.spawnSync(computeCommandName("code") + " --install-extension " + id);
