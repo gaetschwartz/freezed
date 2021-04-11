@@ -2,7 +2,7 @@
 	"name": "freezed",
 	"displayName": "Freezed | Build Runner",
 	"description": "Generate Freezed classes and run build_runner commands easily.",
-	"version": "0.8.0",
+	"version": "0.9.0",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/gaetschwartz/freezed.git"
