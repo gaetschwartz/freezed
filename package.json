@@ -2,7 +2,7 @@
 	"name": "freezed",
 	"displayName": "Freezed",
 	"description": "Generate Freezed classes easily.",
-	"version": "0.9.2",
+	"version": "0.9.3",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/gaetschwartz/freezed.git"
