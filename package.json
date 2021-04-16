@@ -66,14 +66,7 @@
 					"group": "z_commands"
 				}
 			]
-		},
-		"keybindings": [
-			{
-				"command": "freezed.build_runner",
-				"key": "Ctrl+Shift+B",
-				"mac": "Cmd+Shift+B"
-			}
-		]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
