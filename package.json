@@ -19,9 +19,7 @@
 	],
 	"keywords": [
 		"freezed",
-		"flutter",
-		"build_runner",
-		"build"
+		"flutter"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -31,7 +29,7 @@
 				"title": "Freezed: Generate a new Freezed class"
 			},
 			{
-				"command": "freezed.build_runner_build",
+				"command": "freezed.build_runner",
 				"title": "Freezed: Build with build_runner"
 			},
 			{
