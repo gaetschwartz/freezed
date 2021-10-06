@@ -29,6 +29,11 @@ interface BooleanQuickPickItem extends vscode.QuickPickItem { value: boolean }
 export let isWin32 = process.platform === "win32";
 let computeCommandName = (cmd: string): string => isWin32 ? cmd + ".cmd" : cmd;
 
+const toSnake = (value: string) => value
+.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+.toLowerCase()
+.replace(/^_/, '');
+
 async function generateClass(inUri: vscode.Uri | undefined) {
 	// The code you place here will be executed every time your command is executed
 
@@ -75,7 +80,7 @@ async function generateClass(inUri: vscode.Uri | undefined) {
 		uri = inUri;
 	}
 
-	var filePath = p.join(uri.fsPath, name.toLowerCase() + '.dart');
+	var filePath = p.join(uri.fsPath, toSnake(name) + '.dart');
 	fs.writeFileSync(filePath, generateFile(name, doJson[0].value), 'utf8');
 
 	var openPath = vscode.Uri.parse("file:///" + filePath); //A request file path
@@ -87,10 +92,10 @@ async function generateClass(inUri: vscode.Uri | undefined) {
 
 
 
-function generateFile(name: String, doJson: boolean) {
-	const lower = name.toLowerCase();
+function generateFile(name: string, doJson: boolean) {
+	const filename = toSnake(name);
 	const camel = camelize(name);
-	const jsonImport = doJson ? `part '${lower}.g.dart';` : "";
+	const jsonImport = doJson ? `part '${filename}.g.dart';` : "";
 	const jsonConstr = doJson ? `
   factory ${camel}.fromJson(Map<String, dynamic> json) =>
 			_$${camel}FromJson(json);` : "";
@@ -98,7 +103,7 @@ function generateFile(name: String, doJson: boolean) {
 	const content = `
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part '${lower}.freezed.dart';
+part '${filename}.freezed.dart';
 ${jsonImport}
 
 @freezed
@@ -110,7 +115,7 @@ abstract class ${camel} with _$${camel} {
 	return content;
 }
 
-export function camelize(str: String) {
+export function camelize(str: string) {
 	return str.replace(/^([a-z])|((?:[\s_])[a-z])/g, function (match, _index) {
 		if (+match === 0) { return ""; } // or if (/\s+/.test(match)) for white spaces
 		return match.toUpperCase().replace(/[\s_]/g, (_, __) => "");
